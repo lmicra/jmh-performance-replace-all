@@ -1,0 +1,56 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+buildscript {
+	repositories {
+		jcenter()
+	}
+	dependencies {
+		classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.1'
+	}
+}
+
+repositories {
+	jcenter()
+}
+
+sourceSets {
+	perf
+}
+
+dependencies {
+	compile 'commons-io:commons-io:2.5'
+	compile 'org.apache.commons:commons-lang3:3.6'
+	compile 'com.google.guava:guava:22.0'
+
+	testCompile 'junit:junit:4.12'
+
+	perfCompile project
+
+	perfCompile 'org.openjdk.jmh:jmh-core:1.19'
+	perfCompile 'org.openjdk.jmh:jmh-generator-annprocess:1.19'
+}
+
+task benchmarks(dependsOn: perfClasses) {
+	apply plugin: 'com.github.johnrengelman.shadow'
+
+	mainClassName = "org.openjdk.jmh.Main"
+
+	shadowJar {
+		classifier = "benchmarks"
+
+		from sourceSets.perf.output
+		from sourceSets.main.output
+		from project.configurations.perfRuntime
+
+		manifest {
+			attributes "Main-Class": "org.openjdk.jmh.Main"
+		}
+	}
+
+	doLast {
+		shadowJar.execute()
+	}
+}
+
+mainClassName = "net.individual.jmhreplaceall.Main"
